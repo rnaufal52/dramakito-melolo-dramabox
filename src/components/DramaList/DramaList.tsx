@@ -6,17 +6,23 @@ import { Book, ApiItem } from "@/types/dracin";
 
 interface DramaListProps {
   title: string;
-  items: ApiItem[] | Book[];
+  items: Book[];
   viewAllLink?: string;
+  icon?: React.ReactNode;
 }
 
-const DramaList: React.FC<DramaListProps> = ({ title, items, viewAllLink }) => {
+const DramaList: React.FC<DramaListProps> = ({ title, items, viewAllLink, icon }) => {
   if (!items || items.length === 0) return null;
 
   return (
-    <div className="py-4 md:py-8 space-y-4">
-      <div className="flex items-center justify-between px-4 md:px-12">
-        <h2 className="text-xl font-bold text-white md:text-2xl">{title}</h2>
+    <section className="py-4">
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+            {icon && <span className="text-red-500">{icon}</span>}
+            <h2 className="text-xl font-bold text-white md:text-2xl border-l-4 border-red-600 pl-3">
+            {title}
+            </h2>
+        </div>
         {viewAllLink && (
             <Link 
                 href={viewAllLink}
@@ -50,9 +56,9 @@ const DramaList: React.FC<DramaListProps> = ({ title, items, viewAllLink }) => {
                     </div>
                 );
             })}
-        </div>
       </div>
-    </div>
+      </div>
+    </section>
   );
 };
 

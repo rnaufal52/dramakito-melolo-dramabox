@@ -95,6 +95,7 @@ export default function WatchController({
                             hasNext={currentEpIndex < episodes.length - 1}
                             hasPrev={currentEpIndex > 0}
                             externalLoading={isNavigating} // Pass shared loading state
+                            onMarkWatched={() => markWatched({ bookId, ...bookInfo }, currentEpIndex)}
                         />
                     ) : (
                         <div className="flex aspect-video w-full items-center justify-center bg-gray-900 rounded-lg text-gray-500">

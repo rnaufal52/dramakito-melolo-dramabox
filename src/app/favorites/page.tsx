@@ -93,43 +93,46 @@ export default function FavoritesPage() {
                     </div>
                     
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                        {historyItems.map((book) => (
-                            <div key={book.bookId} className="relative group">
-                                <Link href={`/watch/${book.bookId}`} className="block relative aspect-[3/4] rounded-lg overflow-hidden">
-                                     <img 
-                                        src={book.coverWap} 
-                                        alt={book.bookName} 
-                                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                                     />
-                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                         <svg className="w-12 h-12 text-white drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
-                                             <path d="M8 5v14l11-7z" />
-                                         </svg>
-                                     </div>
-                                     <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/90 to-transparent">
-                                          <p className="text-white text-sm font-medium truncate">{book.bookName}</p>
-                                          <p className="text-gray-300 text-xs truncate">
-                                              Ep {(history[book.bookId]?.lastWatchedIndex || 0) + 1}
-                                          </p>
-                                     </div>
-                                </Link>
+                        {historyItems.map((book) => {
+                            const lastEpIndex = history[book.bookId]?.lastWatchedIndex || 0;
+                            return (
+                                <div key={book.bookId} className="relative group">
+                                    <Link href={`/watch/${book.bookId}?ep=${lastEpIndex}`} className="block relative aspect-[3/4] rounded-lg overflow-hidden">
+                                        <img 
+                                            src={book.coverWap} 
+                                            alt={book.bookName} 
+                                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                                        />
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                            <svg className="w-12 h-12 text-white drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
+                                                <path d="M8 5v14l11-7z" />
+                                            </svg>
+                                        </div>
+                                        <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/90 to-transparent">
+                                            <p className="text-white text-sm font-medium truncate">{book.bookName}</p>
+                                            <p className="text-gray-300 text-xs truncate">
+                                                Ep {lastEpIndex + 1}
+                                            </p>
+                                        </div>
+                                    </Link>
 
-                                {/* Remove Button */}
-                                <button
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        handleRemoveItem(book);
-                                    }}
-                                    className="absolute top-2 right-2 bg-black/60 hover:bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110 z-10"
-                                    title="Remove from history"
-                                >
-                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </div>
-                        ))}
+                                    {/* Remove Button */}
+                                    <button
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            handleRemoveItem(book);
+                                        }}
+                                        className="absolute top-2 right-2 bg-black/60 hover:bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110 z-10"
+                                        title="Remove from history"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             )}

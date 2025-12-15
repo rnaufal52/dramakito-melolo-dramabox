@@ -2,7 +2,7 @@
 
 import { Episode, VideoPath } from "@/types/dracin";
 import React, { useEffect, useState, useRef, useCallback, Fragment } from "react";
-import { useHistory } from "@/hooks/useHistory";
+import { useHistory } from "@/hooks/useHistory"; // This will be removed
 import { useRouter } from "next/navigation";
 
 interface VideoPlayerProps {
@@ -14,9 +14,10 @@ interface VideoPlayerProps {
   hasNext?: boolean;
   hasPrev?: boolean;
   externalLoading?: boolean;
+  onMarkWatched?: (bookId: string, episodeIndex: number) => void;
 }
 
-export default function VideoPlayer({ 
+const VideoPlayer: React.FC<VideoPlayerProps> = ({ 
     episode, 
     poster, 
     bookId, 
@@ -24,8 +25,9 @@ export default function VideoPlayer({
     bookInfo,
     hasNext,
     hasPrev,
-    externalLoading = false
-}: VideoPlayerProps) {
+    externalLoading = false,
+    onMarkWatched
+}) => {
   const [availableQualities, setAvailableQualities] = useState<VideoPath[]>([]);
   const [currentQuality, setCurrentQuality] = useState<VideoPath | null>(null);
   const [videoSrc, setVideoSrc] = useState<string>("");
@@ -33,30 +35,35 @@ export default function VideoPlayer({
   const containerRef = useRef<HTMLDivElement>(null);
   
   // Custom Controls State
-  const [isPlaying, setIsPlaying] = useState(false); // Default to false until we know
+  const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
-  const [isLoading, setIsLoading] = useState(false); // Loading for navigation
-  const [isSpeedingUp, setIsSpeedingUp] = useState(false); // 2x Speed state
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSpeedingUp, setIsSpeedingUp] = useState(false);
   const hasMarkedRef = useRef(false);
 
-  const { markWatched, saveProgress, getProgress, getLastWatched } = useHistory();
-  const [restoredTime, setRestoredTime] = useState(false);
+  const { saveProgress, getProgress, getLastWatched } = useHistory(); 
+  const [restoredTime, setRestoredTime] = useState(false); 
   const router = useRouter();
 
   // Next Episode Popup State
   const [showNextPopup, setShowNextPopup] = useState(false);
-  const [countdown, setCountdown] = useState(0);
+  const [countdown, setCountdown] = useState(10); 
   const [isCancelled, setIsCancelled] = useState(false);
+
+  // Auto Play preference (Moved up)
+  const [isAutoPlay, setIsAutoPlay] = useState(true);
 
   // Mark as watched & Restore Progress
   useEffect(() => {
-    setRestoredTime(false); // Reset restored state on episode change
-    setIsCancelled(false);
+    setIsLoading(false);
+    setIsPlaying(true); 
     setShowNextPopup(false);
-    setIsLoading(false); // Turn off loading when episode changes
-    hasMarkedRef.current = false; // Reset marked state
+    setCountdown(10);
+    setIsCancelled(false);
+    hasMarkedRef.current = false;
+    setRestoredTime(false);
   }, [episodeIndex]);
 
   // Prefetch next episode for instant navigation
@@ -69,14 +76,10 @@ export default function VideoPlayer({
   useEffect(() => {
     if (bookId && bookInfo) {
         // Restore progress logic
-        // We check if we have a saved progress for this specific book AND if the last watched index matches functionality
-        // But simply, if user navigates to an episode, we usually start from 0 UNLESS it's the one they left off.
         const lastIndex = getLastWatched(bookId);
         
-        // Only load progress if we are watching the same episode we left off, or if it's a resume action (which we don't distinguish here yet)
         if (lastIndex === episodeIndex && !restoredTime) {
              const savedTime = getProgress(bookId);
-             // Ensure reasonable time (not near end)
              if (savedTime > 5 && videoRef.current) {
                  videoRef.current.currentTime = savedTime;
              }
@@ -98,24 +101,16 @@ export default function VideoPlayer({
 
       // Mark as watched if played more than 1 second
       if (time > 1 && bookInfo) {
-         // We rely on useHistory internal logic to not duplicate or spam updates too much, 
-         // but strictly speaking markWatched is efficient. 
-         // However, to avoid calling it every frame, we could check if it's already marked for this session.
-         // But useHistory usually overwrites safely. Let's add a debouncer or simple check?
-         // Actually markWatched is cheap. But let's verify if we need a state to prevent spam.
-         // For now, let's just trigger it once per session basically.
-         // But wait, user might re-watch.
-         // Let's use a ref ensuring we only mark ONCE per video load if > 1s.
          if (!hasMarkedRef.current) {
-             markWatched({ bookId, ...bookInfo }, episodeIndex);
+             if (onMarkWatched) {
+                 onMarkWatched(bookId, episodeIndex);
+             }
              hasMarkedRef.current = true;
          }
       }
       
       // Save every roughly 5 seconds (performance)
       if (time > 0 && Math.floor(time) % 5 === 0) {
-          // If near end (95%), maybe don't save progress or reset? 
-          // For now, save plain.
           if (duration && time < duration - 10) {
               saveProgress(bookId, time);
           }
@@ -125,20 +120,20 @@ export default function VideoPlayer({
       if (duration && hasNext && !isCancelled) {
           const remaining = duration - time;
           
-          // Instant Autoplay Trigger (0.3s buffer to prevent dead air)
+          // Instant Autoplay Trigger (0.3s buffer)
           if (isAutoPlay && remaining < 0.3 && !isLoading) {
              handleNext();
-             return; // Stop further updates
+             return; 
           }
 
-          if (remaining <= 10 && remaining > 0) { // Show in last 10 seconds
+          if (remaining <= 10 && remaining > 0) { 
               setShowNextPopup(true);
               setCountdown(Math.ceil(remaining));
           } else {
               setShowNextPopup(false);
           }
       }
-  }, [bookId, saveProgress, hasNext, isCancelled]);
+  }, [bookId, saveProgress, hasNext, isCancelled, onMarkWatched, isAutoPlay, isLoading]);
 
   const handleCancelPopup = () => {
       setIsCancelled(true);
@@ -253,9 +248,6 @@ export default function VideoPlayer({
         </div>
       );
   }
-
-  // Auto Play preference
-  const [isAutoPlay, setIsAutoPlay] = useState(true);
 
   // Load AutoPlay preference
   useEffect(() => {
@@ -450,5 +442,7 @@ export default function VideoPlayer({
     </div>
   );
 }
+
+export default VideoPlayer;
 
 
