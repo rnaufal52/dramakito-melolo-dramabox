@@ -41,8 +41,23 @@ const DramaCard: React.FC<DramaCardProps> = ({ drama, featured = false }) => {
       }
   };
 
+  // Construct safe book object for Favorites and Link
+  const safeBook = {
+      bookId: id,
+      bookName: title,
+      coverWap: drama.coverWap,
+      cover: drama.cover,
+      tagNames: drama.tagV3s?.map((t: any) => t.tagName) || [],
+      introduction: drama.introduction
+  };
+
+  const queryParams = new URLSearchParams();
+  if (title) queryParams.set("title", title);
+  if (drama.coverWap) queryParams.set("cover", drama.coverWap);
+  if (drama.introduction) queryParams.set("intro", drama.introduction);
+
   return (
-    <Link href={`/watch/${id}`} className={`group relative block h-full w-full overflow-hidden rounded-md bg-zinc-800 transition-all duration-300 hover:z-50 hover:scale-105 hover:shadow-xl`}>
+    <Link href={`/watch/${id}?${queryParams.toString()}`} className={`group relative block h-full w-full overflow-hidden rounded-md bg-zinc-800 transition-all duration-300 hover:z-50 hover:scale-105 hover:shadow-xl`}>
       <div className="aspect-[2/3] w-full relative">
         <img
           src={image}

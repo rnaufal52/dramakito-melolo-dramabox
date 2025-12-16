@@ -235,6 +235,29 @@ export const dracinApi = {
       } catch (e) {
          console.error("Dramabox detail lookup failed", e);
       }
+
+      // 3. Fallback: Force fetch episodes directly (Dramabox specific for Search results not in Trending/Latest)
+      try {
+          const eps = await dracinApi.getAllEpisodes(bookId);
+          if (eps.length > 0) {
+              // Construct a partial book object from the first episode's data
+              // We use the first episode's image as cover if possible
+              const firstEp = eps[0];
+              return {
+                  bookId: bookId,
+                  // If chapterName contains the book title (often "Title Ep 1"), we could try to parse, but "Drama" is safer fallback
+                  bookName: "Drama " + bookId, 
+                  coverWap: firstEp.chapterImg || "",
+                  introduction: "Details not available.",
+                  tags: [],
+                  chapterCount: eps.length,
+                  episodeList: eps
+              };
+          }
+      } catch (e) {
+          console.error("Dramabox force fetch failed", e);
+      }
+
       return null;
   },
 

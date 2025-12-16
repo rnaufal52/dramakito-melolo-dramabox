@@ -8,15 +8,24 @@ import { Metadata } from "next";
 
 interface WatchPageProps {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ ep?: string }>;
+  searchParams: Promise<{ ep?: string; title?: string; cover?: string; intro?: string }>;
 }
 
-export async function generateMetadata({ params }: WatchPageProps): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: WatchPageProps): Promise<Metadata> {
   const { id } = await params;
+  const { title: paramTitle, cover: paramCover } = await searchParams;
+  
   const bookDetails = await dracinApi.getBookDetails(id);
   
   // Fallback title if details fail
-  const title = bookDetails?.bookName || "Watch Drama";
+  const title = (bookDetails?.bookName && !bookDetails.bookName.startsWith("Drama ")) 
+    ? bookDetails.bookName 
+    : (paramTitle ? decodeURIComponent(paramTitle) : (bookDetails?.bookName || "Watch Drama"));
+
+  const cover = (bookDetails?.coverWap)
+    ? bookDetails.coverWap
+    : (paramCover ? decodeURIComponent(paramCover) : "");
+
   const description = bookDetails?.introduction?.slice(0, 160) || "Watch high quality Chinese dramas on Dracin.";
 
   return {
@@ -25,20 +34,20 @@ export async function generateMetadata({ params }: WatchPageProps): Promise<Meta
     openGraph: {
       title: title,
       description: description,
-      images: bookDetails?.coverWap ? [ bookDetails.coverWap ] : [],
+      images: cover ? [ cover ] : [],
     }
   };
 }
 
 export default async function WatchPage({ params, searchParams }: WatchPageProps) {
   const { id } = await params;
-  const { ep } = await searchParams; // Current episode index or ID
+  const { ep, title: paramTitle, cover: paramCover, intro: paramIntro } = await searchParams;
 
   // Fetch book details (which encompasses episodes)
   const bookDetails = await dracinApi.getBookDetails(id);
   
   // Tag based recommendation
-  const tags = bookDetails?.tags || []; // Updated from tagNames
+  const tags = bookDetails?.tags || []; 
   const similarDramas = await dracinApi.getSimilar(id, tags);
 
   let episodes: Episode[] = bookDetails?.episodeList || [];
@@ -73,13 +82,22 @@ export default async function WatchPage({ params, searchParams }: WatchPageProps
       }
   }
 
+  // Logic to determine display metadata
+  // If API name is "Drama [ID]" (fallback) OR missing, AND we have paramTitle, use paramTitle.
+  const apiName = bookDetails?.bookName;
+  const isGenericName = !apiName || apiName.startsWith("Drama ");
+  
+  const finalTitle = (!isGenericName && apiName) ? apiName : (paramTitle ? decodeURIComponent(paramTitle) : (apiName || "Unknown Drama"));
+  const finalCover = (bookDetails?.coverWap) ? bookDetails.coverWap : (paramCover ? decodeURIComponent(paramCover) : episodes[0]?.chapterImg);
+  const finalIntro = (bookDetails?.introduction) ? bookDetails.introduction : (paramIntro ? decodeURIComponent(paramIntro) : "");
+
   // Construct book details object for passing to FavoriteButton and UI
   const displayBook = {
       bookId: id,
-      bookName: bookDetails?.bookName || episodes[0]?.chapterName?.split(' - ')[0] || "Unknown Drama",
-      coverWap: bookDetails?.coverWap || episodes[0]?.chapterImg,
+      bookName: finalTitle,
+      coverWap: finalCover,
       tags: bookDetails?.tags || [],
-      introduction: bookDetails?.introduction
+      introduction: finalIntro
   };
 
   const dramaTitle = displayBook.bookName;

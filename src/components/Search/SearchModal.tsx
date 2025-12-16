@@ -110,9 +110,14 @@ export default function SearchModal({ onClose }: { onClose: () => void }) {
          setTimeout(() => onClose(), 500);
     };
 
-    const handleSuggestionClick = (bookId: string) => {
+    const handleSuggestionClick = (book: Book) => {
         setIsLoading(true);
-        router.push(`/watch/${bookId}`);
+        const params = new URLSearchParams();
+        if (book.bookName) params.set("title", book.bookName);
+        if (book.coverWap) params.set("cover", book.coverWap);
+        if (book.introduction) params.set("intro", book.introduction);
+        
+        router.push(`/watch/${book.bookId}?${params.toString()}`);
         setTimeout(() => onClose(), 500);
     };
 
@@ -158,7 +163,7 @@ export default function SearchModal({ onClose }: { onClose: () => void }) {
                                       suggestions.map((book) => (
                                           <div 
                                             key={book.bookId} 
-                                            onClick={() => handleSuggestionClick(book.bookId)}
+                                            onClick={() => handleSuggestionClick(book)}
                                             className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/10 cursor-pointer transition-colors group"
                                           >
                                               <div className="h-12 w-8 flex-none bg-gray-800 rounded overflow-hidden">
